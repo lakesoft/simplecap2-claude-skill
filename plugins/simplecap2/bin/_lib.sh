@@ -16,25 +16,56 @@ EXPECTED_BUNDLE_ID="jp.lakesoft.simplecap2"
 # Print the absolute path to a verified SimpleCap2.app bundle on stdout.
 # Returns non-zero (with diagnostic on stderr) if no installation passes
 # Team ID verification.
+#
+# Resolution order (highest priority first):
+#   1. $SIMPLECAP2_APP_PATH override (if set).
+#   2. The bundle of any currently-running SimpleCap2 process — matches the
+#      user's actual runtime expectation, especially during development.
+#   3. /Applications/SimpleCap2.app, then ~/Applications/SimpleCap2.app.
+#   4. Anything else Spotlight finds, sorted newest-first by mtime so a
+#      stale Xcode archive doesn't mask a fresh install.
+# The first candidate whose code signature matches $EXPECTED_TEAM_ID wins.
 locate_app_bundle() {
   local override="${SIMPLECAP2_APP_PATH:-}"
   local candidates=()
+  local seen
+
+  _push_candidate() {
+    local p="$1"
+    [ -z "$p" ] && return
+    [ -d "$p" ] || return
+    for seen in "${candidates[@]+"${candidates[@]}"}"; do
+      [ "$seen" = "$p" ] && return
+    done
+    candidates+=("$p")
+  }
 
   if [ -n "$override" ]; then
-    candidates+=("$override")
-  fi
-  if [ -d "/Applications/SimpleCap2.app" ]; then
-    candidates+=("/Applications/SimpleCap2.app")
-  fi
-  if [ -d "$HOME/Applications/SimpleCap2.app" ]; then
-    candidates+=("$HOME/Applications/SimpleCap2.app")
+    _push_candidate "$override"
   fi
 
-  # Spotlight-fallback: any other install location, including DerivedData
-  # for local development.
+  # Running instance: strip /Contents/MacOS/SimpleCap2 to get the bundle.
+  local running_exe
+  running_exe=$(ps -A -o command= 2>/dev/null \
+    | awk '/\/Contents\/MacOS\/SimpleCap2( |$)/ {sub(/ .*/, ""); print; exit}')
+  if [ -n "$running_exe" ]; then
+    _push_candidate "${running_exe%/Contents/MacOS/SimpleCap2}"
+  fi
+
+  _push_candidate "/Applications/SimpleCap2.app"
+  _push_candidate "$HOME/Applications/SimpleCap2.app"
+
+  # Spotlight, sorted newest-first by directory mtime.
+  local sorted
+  sorted=$(mdfind "kMDItemCFBundleIdentifier == '$EXPECTED_BUNDLE_ID'" 2>/dev/null \
+    | while IFS= read -r p; do
+        [ -d "$p" ] && printf '%s\t%s\n' "$(stat -f '%m' "$p" 2>/dev/null || echo 0)" "$p"
+      done \
+    | sort -nr \
+    | cut -f2-)
   while IFS= read -r line; do
-    [ -n "$line" ] && candidates+=("$line")
-  done < <(mdfind "kMDItemCFBundleIdentifier == '$EXPECTED_BUNDLE_ID'" 2>/dev/null)
+    _push_candidate "$line"
+  done <<<"$sorted"
 
   if [ ${#candidates[@]} -eq 0 ]; then
     cat >&2 <<EOF
@@ -48,7 +79,6 @@ EOF
   # Pick the first candidate that passes Team ID verification.
   local cand
   for cand in "${candidates[@]}"; do
-    [ -d "$cand" ] || continue
     local team_id
     team_id=$(codesign -dv --verbose=4 "$cand" 2>&1 | awk -F'=' '/^TeamIdentifier=/ {print $2}')
     if [ "$team_id" = "$EXPECTED_TEAM_ID" ]; then
