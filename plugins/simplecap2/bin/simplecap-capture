@@ -44,13 +44,18 @@ fi
 
 echo "[simplecap-capture] mode=$mode timeout=${timeout}s folder=$folder" >&2
 
-# Baseline mtime so we only consider files created after this point.
-baseline=$(date +%s)
-sleep 1  # ensure the comparison granularity is on our side
+# Baseline = a sentinel file timestamped NOW, so we can do a fast
+# `find -newer "$sentinel"` later. Using the folder itself as a baseline
+# does not work: macOS bumps the parent directory's mtime to the new
+# file's mtime, so no file ends up strictly newer than the folder.
+sentinel=$(mktemp -t simplecap-baseline.XXXXXX)
+trap 'rm -f "$sentinel"' EXIT
 
-# Use `open -a "$bundle"` (not bare `open simplecap2://...`) so the URL is
-# delivered to the verified bundle, not whatever app may have hijacked the
-# URL scheme.
+# 1-second granularity guard: ensure any new capture has strictly later mtime.
+sleep 1
+
+# `open -a "$bundle"` (rather than `open simplecap2://...`) delivers the URL
+# to the verified bundle even if some other app has hijacked the URL scheme.
 if ! open -a "$bundle" "simplecap2://capture/$mode" 2>/dev/null; then
   echo "Failed to dispatch URL scheme. Make sure SimpleCap2 is installed and recent." >&2
   exit 1
@@ -63,16 +68,14 @@ while [ "$elapsed" -lt "$timeout" ]; do
   elapsed=$((elapsed + 1))
   newfile=$(find "$folder" -maxdepth 1 -type f \
     \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) \
-    -newer "$folder" 2>/dev/null \
+    -newer "$sentinel" 2>/dev/null \
     | while IFS= read -r f; do
         mtime=$(stat -f "%m" "$f" 2>/dev/null || echo 0)
-        if [ "$mtime" -gt "$baseline" ]; then
-          echo "$mtime $f"
-        fi
+        printf '%s\t%s\n' "$mtime" "$f"
       done \
     | sort -nr \
     | head -1 \
-    | cut -d' ' -f2-)
+    | cut -f2-)
 
   if [ -n "$newfile" ]; then
     echo "[simplecap-capture] captured: $newfile" >&2
