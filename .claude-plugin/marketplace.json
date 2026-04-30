@@ -1,0 +1,20 @@
+{
+  "name": "simplecap2",
+  "owner": {
+    "name": "Lakesoft",
+    "url": "https://github.com/lakesoft"
+  },
+  "metadata": {
+    "description": "SimpleCap2 (macOS screen capture app) integration for Claude Code."
+  },
+  "plugins": [
+    {
+      "name": "simplecap2",
+      "source": ".",
+      "description": "Drive SimpleCap2 captures and search the gallery by Finder color tag from Claude Code.",
+      "category": "productivity",
+      "tags": ["macos", "screenshot", "simplecap2"],
+      "version": "0.1.0"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+# Trigger SimpleCap2 to start an interactive capture and print the resulting
+# file path on stdout once the user finishes.
+#
+# Usage:
+#   simplecap-capture region [TIMEOUT]
+#   simplecap-capture window [TIMEOUT]
+#
+# TIMEOUT defaults to $SIMPLECAP_TIMEOUT (env var) or 60 seconds.
+#
+# Completion detection is by mtime polling: any new image file appearing in
+# the configured save folder within the timeout is treated as the capture
+# result. If the user cancels the overlay (Esc) the script exits with 2.
+
+set -euo pipefail
+
+# shellcheck source=./_lib.sh
+source "$(dirname "$0")/_lib.sh"
+
+mode="${1:-region}"
+case "$mode" in
+  region|window) ;;
+  *)
+    echo "Unknown mode '$mode'. Use 'region' or 'window'." >&2
+    exit 2
+    ;;
+esac
+
+timeout="${SIMPLECAP_TIMEOUT:-${2:-60}}"
+case "$timeout" in
+  ''|*[!0-9]*)
+    echo "Timeout must be a positive integer (seconds). Got '$timeout'." >&2
+    exit 2
+    ;;
+esac
+
+bundle=$(locate_app_bundle) || exit 1
+folder=$("$(dirname "$0")/simplecap-folder") || exit 1
+
+if [ ! -d "$folder" ]; then
+  echo "Save folder does not exist: $folder" >&2
+  exit 1
+fi
+
+echo "[simplecap-capture] mode=$mode timeout=${timeout}s folder=$folder" >&2
+
+# Baseline mtime so we only consider files created after this point.
+baseline=$(date +%s)
+sleep 1  # ensure the comparison granularity is on our side
+
+# Use `open -a "$bundle"` (not bare `open simplecap2://...`) so the URL is
+# delivered to the verified bundle, not whatever app may have hijacked the
+# URL scheme.
+if ! open -a "$bundle" "simplecap2://capture/$mode" 2>/dev/null; then
+  echo "Failed to dispatch URL scheme. Make sure SimpleCap2 is installed and recent." >&2
+  exit 1
+fi
+
+# Poll for a new image file (PNG/JPG/JPEG/WEBP) in the save folder.
+elapsed=0
+while [ "$elapsed" -lt "$timeout" ]; do
+  sleep 1
+  elapsed=$((elapsed + 1))
+  newfile=$(find "$folder" -maxdepth 1 -type f \
+    \( -iname '*.png' -o -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.webp' \) \
+    -newer "$folder" 2>/dev/null \
+    | while IFS= read -r f; do
+        mtime=$(stat -f "%m" "$f" 2>/dev/null || echo 0)
+        if [ "$mtime" -gt "$baseline" ]; then
+          echo "$mtime $f"
+        fi
+      done \
+    | sort -nr \
+    | head -1 \
+    | cut -d' ' -f2-)
+
+  if [ -n "$newfile" ]; then
+    echo "[simplecap-capture] captured: $newfile" >&2
+    echo "$newfile"
+    exit 0
+  fi
+done
+
+echo "Timeout (${timeout}s) — no new capture detected. The user may have cancelled." >&2
+exit 2

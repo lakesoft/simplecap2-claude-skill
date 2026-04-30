@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Print the absolute path to SimpleCap2's configured save folder.
+# Exits non-zero if the user has not yet picked a folder in the app.
+
+set -euo pipefail
+
+# shellcheck source=./_lib.sh
+source "$(dirname "$0")/_lib.sh"
+
+bin=$(locate_app_binary) || exit 1
+"$bin" --print-folder

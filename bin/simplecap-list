@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Print SimpleCap2 gallery captures as JSON, optionally filtered by color tag.
+#
+# Usage:
+#   simplecap-list                  # all captures
+#   simplecap-list red              # English color name
+#   simplecap-list 6                # Finder label number 1..7
+#   simplecap-list 赤               # Localized Finder name (Japanese, French, etc.)
+#   simplecap-list untagged         # captures without any color tag
+#   simplecap-list red --limit 200  # additional flags forwarded as-is
+#
+# Output: a single JSON object on stdout, schemaVersion=1. See README.md.
+
+set -euo pipefail
+
+# shellcheck source=./_lib.sh
+source "$(dirname "$0")/_lib.sh"
+
+bin=$(locate_app_binary) || exit 1
+
+args=()
+if [ $# -ge 1 ]; then
+  case "$1" in
+    "")
+      ;;
+    untagged)
+      args+=(--untagged)
+      ;;
+    *)
+      # Color name validation (multi-language) is performed by the app.
+      args+=(--color "$1")
+      ;;
+  esac
+  shift || true
+fi
+
+# Forward any remaining flags (--limit, --offset, ...) verbatim.
+exec "$bin" --list-captures "${args[@]}" "$@"

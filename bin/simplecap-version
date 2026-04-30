@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Print SimpleCap2 version + CLI schema version.
+# Output format: `SimpleCap2 1.0.0 (42) schemaVersion=1`
+#
+# Skill use: confirm the installed SimpleCap2 is recent enough to expose
+# the CLI features this skill depends on.
+
+set -euo pipefail
+
+# shellcheck source=./_lib.sh
+source "$(dirname "$0")/_lib.sh"
+
+bin=$(locate_app_binary) || exit 1
+"$bin" --version
