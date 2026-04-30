@@ -100,15 +100,19 @@ talks only to your locally installed SimpleCap2 process.
 ├── .claude-plugin/
 │   ├── marketplace.json    # Catalog metadata (read by /plugin marketplace add)
 │   └── plugin.json         # Plugin manifest
-├── bin/
-│   ├── _lib.sh             # Shared helpers (Team ID verification, app discovery)
-│   ├── simplecap-version
-│   ├── simplecap-folder
-│   ├── simplecap-list
-│   └── simplecap-capture
-└── skills/
+└── plugins/
     └── simplecap2/
-        └── SKILL.md        # Skill prompt loaded by Claude Code
+        ├── .claude-plugin/
+        │   └── plugin.json
+        ├── bin/
+        │   ├── _lib.sh         # Shared helpers (Team ID verification, app discovery)
+        │   ├── simplecap-version
+        │   ├── simplecap-folder
+        │   ├── simplecap-list
+        │   └── simplecap-capture
+        └── skills/
+            └── simplecap2/
+                └── SKILL.md    # Skill prompt loaded by Claude Code
 ```
 
 ### Development
@@ -195,15 +199,19 @@ SimpleCap2 自体が公開している URL Scheme（`simplecap2://capture/{regio
 ├── .claude-plugin/
 │   ├── marketplace.json    # /plugin marketplace add が読むカタログ情報
 │   └── plugin.json         # プラグインのマニフェスト
-├── bin/
-│   ├── _lib.sh             # 共通ヘルパー（Team ID 検証、アプリ検出）
-│   ├── simplecap-version
-│   ├── simplecap-folder
-│   ├── simplecap-list
-│   └── simplecap-capture
-└── skills/
+└── plugins/
     └── simplecap2/
-        └── SKILL.md        # Claude Code が読み込むスキルプロンプト
+        ├── .claude-plugin/
+        │   └── plugin.json
+        ├── bin/
+        │   ├── _lib.sh         # 共通ヘルパー（Team ID 検証、アプリ検出）
+        │   ├── simplecap-version
+        │   ├── simplecap-folder
+        │   ├── simplecap-list
+        │   └── simplecap-capture
+        └── skills/
+            └── simplecap2/
+                └── SKILL.md    # Claude Code が読み込むスキルプロンプト
 ```
 
 ### 開発
