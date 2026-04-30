@@ -4,6 +4,10 @@
 > capture app) and search its gallery by Finder color tag from
 > [Claude Code](https://www.claude.com/product/claude-code).
 
+> ⚠️ **This repository is distribution-only.** Issues are disabled and
+> external pull requests are auto-closed. The skill is published here for
+> install via `/plugin marketplace add`; development happens privately.
+
 > 🇯🇵 日本語版は英語の下にあります.
 
 ---
@@ -134,6 +138,8 @@ MIT.
 ---
 
 ## 日本語
+
+> ⚠️ **本リポジトリは配布専用です。** Issue は無効化されており、外部からの Pull Request は自動クローズされます。`/plugin marketplace add` でのインストール用に公開しているもので、開発は非公開で行っています。
 
 ### このスキルでできること
 
