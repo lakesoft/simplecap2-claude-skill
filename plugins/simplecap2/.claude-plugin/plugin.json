@@ -1,7 +1,7 @@
 {
   "name": "simplecap2",
   "description": "Drive SimpleCap2 (macOS screen capture app) and search its gallery by Finder color tag.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Lakesoft",
     "url": "https://github.com/lakesoft"
