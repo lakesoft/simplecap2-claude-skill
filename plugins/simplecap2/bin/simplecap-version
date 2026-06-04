@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Print SimpleCap2 version + CLI schema version.
-# Output format: `SimpleCap2 1.0.0 (42) schemaVersion=1`
+# Output format: `SimpleCap2 1.0.0 (42) schemaVersion=2`
 #
 # Skill use: confirm the installed SimpleCap2 is recent enough to expose
 # the CLI features this skill depends on.

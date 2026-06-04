@@ -9,7 +9,7 @@
 #   simplecap-list untagged         # captures without any color tag
 #   simplecap-list red --limit 200  # additional flags forwarded as-is
 #
-# Output: a single JSON object on stdout, schemaVersion=1. See README.md.
+# Output: a single JSON object on stdout, schemaVersion=2. See README.md.
 
 set -euo pipefail
 
